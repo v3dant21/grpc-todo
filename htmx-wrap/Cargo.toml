@@ -1,0 +1,6 @@
+[package]
+name = "htmx-wrap"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]

@@ -1,0 +1,6 @@
+[tasks.grpc-todo]
+command = "cargo"
+args =["run","-p", "grpc-todo"]
+
+[task.run]
+run_task ={name =["grpc-todo"]}
