@@ -24,8 +24,8 @@ pub async fn init_db()-> Pool<Sqlite> {
         println!("db already exists");
     }
     let pool = SqlitePool::connect( &config.database_url).await.unwrap();
-    let create_dir= std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let migrations =std::path::Path::new(&create_dir).join("/migrations");
+    let crate_dir = env!("CARGO_MANIFEST_DIR");
+    let migrations =std::path::Path::new(&crate_dir).join("migrations");
 
     let migration_results =sqlx::migrate::Migrator::new(migrations)
         .await

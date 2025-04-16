@@ -12,11 +12,10 @@ service TodoService {
 message Empty {}
 
 message Todo {
-  int32 id = 1;
+  optional int64 id = 1;  // Add 'optional' here
   string title = 2;
   bool completed = 3;
 }
-
 message TodoList {
   repeated Todo todos = 1;
 }
@@ -26,11 +25,11 @@ message CreateTodoRequest {
 }
 
 message UpdateTodoRequest {
-  int32 id = 1;
+  optional int64 id = 1;
   string title = 2;
   bool completed = 3;
 }
 
 message DeleteTodoRequest {
-  int32 id = 1;
+  optional int64 id = 1;
 }

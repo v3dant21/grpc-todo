@@ -4,10 +4,9 @@ use crate::db::{self, create_todo, delete_todo, get_todos, init_db, update_todo}
 use todo::todo_service_server::{TodoService, TodoServiceServer};
 use todo::{CreateTodoRequest, UpdateTodoRequest, DeleteTodoRequest, TodoList, Empty};
 
-mod todo {
+pub mod todo {
     tonic::include_proto!("todo");
 }
-
 
 #[derive(Debug)]
 pub struct MyTodoService {
@@ -18,7 +17,7 @@ impl From<db::Todo> for todo::Todo {
     fn from(todo: db::Todo) -> Self {
         todo::Todo {
             id: todo.id,
-            title: todo.title,
+            title: todo.title.unwrap_or_else(|| "Default Title".to_string()), // Provide a default title
             completed: todo.completed,
         }
     }
@@ -26,9 +25,7 @@ impl From<db::Todo> for todo::Todo {
 
 
 #[tonic::async_trait]
-#[tonic::async_trait]
 impl TodoService for MyTodoService {
-
     async fn create_todo(
         &self,
         request: Request<CreateTodoRequest>,
@@ -40,10 +37,7 @@ impl TodoService for MyTodoService {
 
     async fn get_todo(&self, _: Request<Empty>) -> Result<Response<TodoList>, Status> {
         let todos = get_todos(&self.pool).await;
-        Ok(Response::new(TodoList {
-            todos: todos.into_iter().map(|t: db::Todo| t.into())
-            .collect(),
-        }))
+        Ok(Response::new(TodoList { todos: todos.into_iter().map(|t| t.into()).collect() }))
     }
 
     async fn update_todo(
@@ -51,15 +45,8 @@ impl TodoService for MyTodoService {
         request: Request<UpdateTodoRequest>,
     ) -> Result<Response<todo::Todo>, Status> {
         let req = request.into_inner();
-        let todo = update_todo(
-            &self.pool,
-            req.id,
-            req.title.clone(),
-            req.completed,
-        )
-        .await
-        .map_err(|e| Status::internal(format!("DB error: {}", e)))?;
-        
+        let todo = update_todo(&self.pool, req.id, &req.title, req.completed).await;
+
         Ok(Response::new(todo.into()))
     }
 
@@ -68,14 +55,12 @@ impl TodoService for MyTodoService {
         request: Request<DeleteTodoRequest>,
     ) -> Result<Response<Empty>, Status> {
         let req = request.into_inner();
-        delete_todo(&self.pool, req.id).await;
+        let _id = req.id;
+        delete_todo(&self.pool,req.id).await;
         Ok(Response::new(Empty {}))
     }
+
 }
-
-
-
-
 
 pub async fn run_server() {
     let addr = "[::]:50051".parse().unwrap();
