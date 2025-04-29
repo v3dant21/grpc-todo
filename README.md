@@ -46,8 +46,8 @@ cargo install --force cargo-make
 ### 2️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/htmx-warp-grpc-todo.git
-cd htmx-warp-grpc-todo
+git clone https://github.com/v3dant21/grpc-todo.git
+cd grpc-todo
 ```
 
 ---
