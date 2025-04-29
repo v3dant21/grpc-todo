@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use tonic::transport::{channel, Channel};
+use tonic::transport::{Channel};
 use warp::{Filter, Rejection, Reply};
 use serde::{Deserialize};
 
@@ -7,7 +7,7 @@ mod todo {
     tonic::include_proto!("todo");
 }
 use todo::todo_service_client::TodoServiceClient;
-use todo::{Todo, TodoList, CreateTodoRequest, UpdateTodoRequest, DeleteTodoRequest};
+use todo::{Todo, CreateTodoRequest, UpdateTodoRequest, DeleteTodoRequest};
 
 #[derive(Debug, Clone)]
 struct AppState {
@@ -54,12 +54,13 @@ async fn main() {
         .and(state_filter.clone())
         .and_then(delete_todo_handler);
 
-    let routes = index
+        let routes = index
+        .or(create_todo)   
         .or(get_todos)
-        .or(create_todo)
         .or(update_todo)
         .or(delete_todo)
         .with(warp::cors().allow_any_origin());
+    
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
@@ -158,6 +159,15 @@ struct UpdateTodoForm {
 }
 
 fn render_todo_list(todos: &[Todo]) -> String {
+    if todos.is_empty() {
+        return r#"
+        <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-tasks"></i></div>
+            <p>No tasks yet. Add one above!</p>
+        </div>
+        "#.to_string();
+    }
+    
     let mut html = String::new();
     for todo in todos {
         html.push_str(&render_todo_item(todo));
@@ -166,26 +176,33 @@ fn render_todo_list(todos: &[Todo]) -> String {
 }
 
 fn render_todo_item(todo: &Todo) -> String {
+    let id = todo.id.unwrap_or(0);
+    let completed_class = if todo.completed { "completed" } else { "" };
+    let checked = if todo.completed { "checked" } else { "" };
+    
     format!(r#"
-    <div class="todo-item" id="todo-{}" hx-target="this" hx-swap="outerHTML">
+    <li class="todo-item {}" id="todo-{}" hx-target="this" hx-swap="outerHTML">
         <input type="checkbox" 
+               class="todo-checkbox"
                hx-put="/todos/{}"
                hx-include="[name='title-{}']"
                name="completed"
                {} />
-        <span class="{}">{}</span>
+        <span class="todo-text">{}</span>
         <input type="hidden" name="title-{}" value="{}" />
-        <button hx-delete="/todos/{}">Delete</button>
-    </div>
+        <button class="btn-icon btn-delete" hx-delete="/todos/{}" title="Delete task">
+            <i class="fas fa-trash-alt"></i>
+        </button>
+    </li>
     "#,
-    todo.id.unwrap_or(0),
-    todo.id.unwrap_or(0),
-    todo.id.unwrap_or(0),  
-    if todo.completed { "checked" } else { "" },
-    if todo.completed { "completed" } else { "" },
-    todo.title,
-    todo.id.unwrap_or(0),  
-    todo.title,            
-    todo.id.unwrap_or(0)   
+    completed_class,
+    id,
+    id,
+    id,
+    checked,
+    html_escape::encode_text(&todo.title),
+    id,
+    html_escape::encode_text(&todo.title),
+    id
     )
 }
