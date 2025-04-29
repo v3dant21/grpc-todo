@@ -1,23 +1,362 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Todo App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegant Todo App</title>
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .completed { text-decoration: line-through; }
-        .todo-item { margin: 10px 0; }
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --completed-color: #9ca3af;
+            --bg-color: #f9fafb;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 0.5rem;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            margin: 2rem auto;
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .app-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .app-subtitle {
+            font-size: 1rem;
+            color: #6b7280;
+        }
+
+        .todo-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-todo {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-todo:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            border-radius: var(--radius);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-delete {
+            color: #ef4444;
+        }
+
+        .btn-delete:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        .todo-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+
+        .todo-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border: 2px solid var(--primary-color);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-right: 1rem;
+            transition: all 0.2s;
+        }
+
+        .todo-checkbox:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .todo-checkbox:checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+        }
+
+        .todo-text {
+            flex: 1;
+            margin: 0 1rem;
+            word-break: break-word;
+            transition: all 0.2s;
+        }
+
+        .completed .todo-text {
+            color: var(--completed-color);
+            text-decoration: line-through;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .todo-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem 0;
+            color: #9ca3af;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #d1d5db;
+        }
+
+        /* Loading indicator */
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator {
+            display: inline-block;
+        }
+        .loading-spinner {
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-radius: 50%;
+            border-top: 3px solid var(--primary-color);
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
-    <h1>Todo App</h1>
-    
-    <form hx-post="/todos" hx-target="#todo-list" hx-swap="beforeend">
-        <input type="text" name="title" placeholder="New todo" required>
-        <button type="submit">Add</button>
-    </form>
-    
-    <div id="todo-list" hx-get="/todos" hx-trigger="load">
-        Loading todos...
+    <div class="container">
+        <header class="app-header">
+            <h1 class="app-title">Task Master</h1>
+            <p class="app-subtitle">Organize your day, accomplish more</p>
+        </header>
+
+        <main>
+            <div class="todo-card">
+                <form hx-post="/todos" hx-target="#todo-list" hx-swap="beforeend" hx-indicator="#add-indicator">
+                    <div class="form-group">
+                        <input type="text" name="title" class="input-todo" placeholder="What needs to be done?" required autofocus>
+                        <button type="submit" class="btn">
+                            Add
+                            <span class="htmx-indicator" id="add-indicator">
+                                <span class="loading-spinner"></span>
+                            </span>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="todo-content">
+                    <ul id="todo-list" class="todo-list" hx-get="/todos" hx-trigger="load" hx-indicator="#list-indicator">
+                        <div class="empty-state">
+                            <span class="htmx-indicator" id="list-indicator">
+                                <span class="loading-spinner"></span> Loading tasks...
+                            </span>
+                        </div>
+                    </ul>
+                    
+                    <div class="stats">
+                        <span id="todo-count">0 tasks remaining</span>
+                        <div class="todo-actions">
+                            <span id="completed-count">0 completed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
+
+    <div class="toast" id="notification"></div>
+
+    <script>
+        // Helper function to show a toast notification
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('notification');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
+        // Update task counts
+        function updateTaskCounts() {
+            const totalTasks = document.querySelectorAll('.todo-item').length;
+            const completedTasks = document.querySelectorAll('.todo-item.completed').length;
+            const remainingTasks = totalTasks - completedTasks;
+            
+            document.getElementById('todo-count').textContent = `${remainingTasks} task${remainingTasks !== 1 ? 's' : ''} remaining`;
+            document.getElementById('completed-count').textContent = `${completedTasks} completed`;
+        }
+
+        // Listen for changes to the todo list
+        document.body.addEventListener('htmx:afterSettle', function(event) {
+            updateTaskCounts();
+            
+            // Show appropriate message based on the action
+            if (event.detail.target && event.detail.target.id === 'todo-list') {
+                if (event.detail.requestConfig && event.detail.requestConfig.method === 'POST') {
+                    showToast('Task added successfully!');
+                }
+            }
+            
+            // Check for empty state
+            const todoList = document.getElementById('todo-list');
+            if (todoList && todoList.children.length === 0) {
+                todoList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="fas fa-tasks"></i></div>
+                        <p>No tasks yet. Add one above!</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Listen for delete actions
+        document.body.addEventListener('htmx:beforeRequest', function(event) {
+            if (event.detail.requestConfig.method === 'DELETE') {
+                showToast('Task deleted');
+            }
+        });
+
+        // Clear input after adding a todo
+        document.body.addEventListener('htmx:afterOnLoad', function(event) {
+            if (event.detail.elt.tagName === 'FORM') {
+                event.detail.elt.reset();
+            }
+        });
+    </script>
 </body>
 </html>
