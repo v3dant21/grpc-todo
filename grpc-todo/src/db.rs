@@ -42,14 +42,13 @@ pub async fn init_db()-> Pool<Sqlite> {
 
 pub async fn create_todo(pool:&Pool<Sqlite>, title: &str)-> Todo{
     sqlx::query_as::<_,Todo>(
-            "INSERT INTO todo (title, completed) VALUES (?,?) RETURINING id, title, completed"
+            "INSERT INTO todo (title, completed) VALUES (?,?) RETURNING id, title, completed"
     )
         .bind(title)
         .bind(false)
         .fetch_one(pool)
         .await
         .expect("failed to insert todo")
-    
 }
 
 pub async fn get_todos(pool:&Pool<Sqlite>)->Vec<Todo>{
@@ -61,7 +60,7 @@ pub async fn get_todos(pool:&Pool<Sqlite>)->Vec<Todo>{
 }
 pub async fn update_todo(pool:&Pool<Sqlite>, id:Option<i64>, title:&str, completed:bool)-> Todo{
     sqlx::query_as::<_,Todo>(
-        "UPDATE todo SET title =?, complete=?, WHERE id=? RETURNING id, title, completed"
+        "UPDATE todo SET title = ?, completed = ? WHERE id = ? RETURNING id, title, completed"
     )
     .bind(title)
     .bind(completed)
@@ -72,7 +71,7 @@ pub async fn update_todo(pool:&Pool<Sqlite>, id:Option<i64>, title:&str, complet
 }
 
 pub async fn delete_todo(pool: &Pool<Sqlite>, id: Option<i64>) {
-    sqlx::query("DELETE FROM todos WHERE id = ?")
+    sqlx::query("DELETE FROM todo WHERE id = ?")
         .bind(id)
         .execute(pool)
         .await
